@@ -1,43 +1,22 @@
 """
-Vercel Serverless Entry Point for SynthDNA Lab.
-
-This module wraps the Flask application as a Vercel serverless function.
-Vercel calls the `app` WSGI application for all incoming requests.
+Vercel Serverless API for SynthDNA Lab.
+Handles /api/* routes only. Static files served from public/.
 """
 
 import sys
 import os
+import time
 
-# Add project root to Python path so synthdna_lab is importable
+# Add project root to path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import json
-import time
-from flask import Flask, render_template, request, jsonify
-
+from flask import Flask, request, jsonify
 from synthdna_lab.config import (
     PipelineConfig, COMPANY_PROFILES, SEQUENCING_BACKENDS, TECH_CLASSES
 )
 from synthdna_lab.pipeline import TwistRealisticGenerator
 
-# ── Flask app ──
-_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-_TEMPLATE_DIR = os.path.join(_ROOT, 'synthdna_lab', 'web', 'templates')
-_STATIC_DIR = os.path.join(_ROOT, 'public', 'static')
-
-app = Flask(__name__,
-            template_folder=_TEMPLATE_DIR,
-            static_folder=_STATIC_DIR,
-            static_url_path='/static')
-
-
-# ═══════════════════════════════════════
-# Routes
-# ═══════════════════════════════════════
-
-@app.route('/')
-def index():
-    return render_template('index.html')
+app = Flask(__name__)
 
 
 @app.route('/api/profiles', methods=['GET'])
@@ -76,7 +55,7 @@ def preview_sample():
     max_hp = 1
     cur = 1
     for i in range(1, len(center)):
-        if center[i] == center[i-1]:
+        if center[i] == center[i - 1]:
             cur += 1
             max_hp = max(max_hp, cur)
         else:
@@ -85,10 +64,10 @@ def preview_sample():
     trace_stats = []
     for t in traces:
         t_gc = (t.count('G') + t.count('C')) / max(len(t), 1)
-        len_diff = len(center) - len(t)
         trace_stats.append({
             'sequence': t, 'length': len(t),
-            'gc_content': round(t_gc, 4), 'len_diff': len_diff,
+            'gc_content': round(t_gc, 4),
+            'len_diff': len(center) - len(t),
         })
 
     return jsonify({
@@ -105,7 +84,6 @@ def compare_profiles():
     profile_a = data.get('profile_a', 'twist')
     profile_b = data.get('profile_b', 'photolitho_ethz')
     target_len = int(data.get('target_len', 110))
-    # Reduced sample count for serverless (timeout constraint)
     n_samples = min(int(data.get('n_samples', 100)), 200)
 
     results = {}
@@ -117,7 +95,8 @@ def compare_profiles():
         len_diffs = []
         trace_counts = []
         for i in range(n_samples):
-            center, traces = gen.generate_sample(i, seed_offset=99, min_traces=3, max_traces=10)
+            center, traces = gen.generate_sample(i, seed_offset=99,
+                                                  min_traces=3, max_traces=10)
             trace_counts.append(len(traces))
             for t in traces:
                 len_diffs.append(len(center) - len(t))
@@ -141,15 +120,10 @@ def compare_profiles():
 
 @app.route('/api/generate', methods=['POST'])
 def start_generation():
-    """
-    Serverless generation — returns samples directly in JSON.
-    No background jobs or filesystem writes on Vercel.
-    """
     data = request.json or {}
     profile_key = data.get('profile', 'twist')
     seq_backend = data.get('sequencing_backend', 'illumina')
     target_len = int(data.get('target_len', 110))
-    # Hard cap for serverless
     dataset_size = min(int(data.get('dataset_size', 100)), 500)
 
     config = PipelineConfig(target_len=target_len)
@@ -158,21 +132,15 @@ def start_generation():
     gen = TwistRealisticGenerator(config)
 
     start = time.time()
-    centers = []
-    clusters = []
+    fasta_lines = []
     for i in range(dataset_size):
-        center, traces = gen.generate_sample(i, seed_offset=42, min_traces=3, max_traces=10)
-        centers.append(center)
-        clusters.append(traces)
+        center, traces = gen.generate_sample(i, seed_offset=42,
+                                              min_traces=3, max_traces=10)
+        fasta_lines.append(f">sample_{i}_center\n{center}")
+        for j, t in enumerate(traces):
+            fasta_lines.append(f">sample_{i}_trace_{j}\n{t}")
 
     elapsed = time.time() - start
-
-    # Build FASTA content as downloadable string
-    fasta_lines = []
-    for i, (c, ts) in enumerate(zip(centers, clusters)):
-        fasta_lines.append(f">sample_{i}_center\n{c}")
-        for j, t in enumerate(ts):
-            fasta_lines.append(f">sample_{i}_trace_{j}\n{t}")
 
     return jsonify({
         'status': 'complete',
