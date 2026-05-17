@@ -26,6 +26,9 @@ Training machine learning models for **DNA trace reconstruction** (e.g., diffusi
 2. **PCR amplification errors** — rare polymerase mistakes during copying
 3. **Sequencing errors** — technology-specific (Illumina, Nanopore, PacBio)
 
+
+<img width="1869" height="1064" alt="image" src="https://github.com/user-attachments/assets/3e2c0515-c4fc-43ee-857a-ab8728d40e61" />
+
 ---
 
 ## Supported Platforms
