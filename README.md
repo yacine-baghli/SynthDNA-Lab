@@ -209,6 +209,5 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **Built for DNA Data Storage Research**
 
-*Master's Thesis — Polytech Sorbonne / ETH Zurich*
 
 </div>
