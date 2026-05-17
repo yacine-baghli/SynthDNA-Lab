@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SynthDNA Lab — Multi-Vendor Synthetic DNA Generator</title>
+    <meta name="description" content="Generate ultra-realistic synthetic DNA datasets calibrated to Twist, IDT, DNA Script, ETH Zurich photolithographic, and more.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <canvas id="dna-bg"></canvas>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg viewBox="0 0 40 40" fill="none"><path d="M20 4C14 8 10 14 10 20C10 26 14 32 20 36" stroke="url(#g1)" stroke-width="2.5" stroke-linecap="round"/><path d="M20 4C26 8 30 14 30 20C30 26 26 32 20 36" stroke="url(#g2)" stroke-width="2.5" stroke-linecap="round"/><line x1="12" y1="12" x2="28" y2="12" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><line x1="11" y1="17" x2="29" y2="17" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><line x1="11" y1="23" x2="29" y2="23" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><line x1="12" y1="28" x2="28" y2="28" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"/><defs><linearGradient id="g1" x1="10" y1="4" x2="10" y2="36"><stop stop-color="#06d6a0"/><stop offset="1" stop-color="#118ab2"/></linearGradient><linearGradient id="g2" x1="30" y1="4" x2="30" y2="36"><stop stop-color="#ef476f"/><stop offset="1" stop-color="#ffd166"/></linearGradient></defs></svg>
+                </div>
+                <div><h1>SynthDNA Lab</h1><p class="subtitle">Multi-Vendor Physically-Grounded Synthetic DNA Generator</p></div>
+            </div>
+        </header>
+
+        <main class="main-grid">
+            <!-- LEFT: Configuration -->
+            <section class="panel config-panel">
+                <div class="panel-header"><h2>Configuration</h2></div>
+
+                <!-- Synthesis Platform (Grouped by Tech Class) -->
+                <div class="config-section">
+                    <label class="section-label">Synthesis Platform</label>
+                    <div id="profile-groups"></div>
+                    <div class="profile-description" id="profile-desc"></div>
+                </div>
+
+                <!-- Sequencing Backend -->
+                <div class="config-section">
+                    <label class="section-label">Sequencing Backend</label>
+                    <div class="seq-backend-row" id="seq-backend-row"></div>
+                    <div class="seq-backend-desc" id="seq-backend-desc"></div>
+                </div>
+
+                <!-- Sequence Length -->
+                <div class="config-section">
+                    <label class="section-label">Sequence Length <span class="value-badge" id="len-badge">110 nt</span></label>
+                    <input type="range" id="target-len" min="20" max="300" value="110" class="slider">
+                    <div class="slider-labels"><span>20 nt</span><span>300 nt</span></div>
+                </div>
+
+                <!-- Dataset Size -->
+                <div class="config-section">
+                    <label class="section-label">Dataset Size</label>
+                    <div class="size-grid">
+                        <button class="size-btn active" data-size="100000">100K</button>
+                        <button class="size-btn" data-size="500000">500K</button>
+                        <button class="size-btn" data-size="1000000">1M</button>
+                        <button class="size-btn" data-size="10000000">10M</button>
+                        <div class="custom-size-wrapper"><input type="number" id="custom-size" placeholder="Custom..." min="100" max="50000000" class="custom-size-input"></div>
+                    </div>
+                </div>
+
+                <!-- Traces / Format / Workers -->
+                <div class="config-section">
+                    <label class="section-label">Traces per Sample</label>
+                    <div class="dual-slider-row">
+                        <div class="mini-input"><span>Min</span><input type="number" id="min-traces" value="3" min="1" max="20"></div>
+                        <div class="mini-input"><span>Max</span><input type="number" id="max-traces" value="10" min="2" max="50"></div>
+                    </div>
+                </div>
+                <div class="config-section">
+                    <label class="section-label">Output Format</label>
+                    <div class="format-row">
+                        <button class="format-btn active" data-format="fasta">FASTA</button>
+                        <button class="format-btn" data-format="csv">CSV</button>
+                        <button class="format-btn" data-format="pt">PyTorch .pt</button>
+                    </div>
+                </div>
+                <div class="config-section">
+                    <label class="section-label">CPU Workers <span class="value-badge" id="workers-badge">4</span></label>
+                    <input type="range" id="num-workers" min="1" max="16" value="4" class="slider">
+                </div>
+
+                <div class="action-row">
+                    <button class="btn btn-preview" id="btn-preview" onclick="previewSample()"><span class="btn-icon">&#128300;</span> Preview</button>
+                    <button class="btn btn-generate" id="btn-generate" onclick="startGeneration()"><span class="btn-icon">&#9889;</span> Generate</button>
+                </div>
+            </section>
+
+            <!-- RIGHT: Output -->
+            <section class="panel output-panel">
+                <div class="panel-header">
+                    <h2>Output</h2>
+                    <div class="tab-row">
+                        <button class="tab active" data-tab="preview" onclick="switchTab('preview')">Preview</button>
+                        <button class="tab" data-tab="profile" onclick="switchTab('profile')">Profile</button>
+                        <button class="tab" data-tab="compare" onclick="switchTab('compare')">Compare</button>
+                        <button class="tab" data-tab="generation" onclick="switchTab('generation')">Generate</button>
+                    </div>
+                </div>
+
+                <div class="tab-content active" id="tab-preview">
+                    <div class="empty-state" id="empty-state"><div class="empty-icon">&#128300;</div><p>Click <strong>"Preview"</strong> to generate a sample.</p></div>
+                    <div class="preview-content hidden" id="preview-content">
+                        <div class="stats-row" id="preview-stats"></div>
+                        <div class="sequence-block"><div class="seq-header"><span class="seq-label center-label">CENTER</span><span class="seq-meta" id="center-meta"></span></div><pre class="seq-display" id="center-seq"></pre></div>
+                        <div class="traces-container" id="traces-container"></div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-profile">
+                    <div class="profile-detail-grid" id="profile-detail-grid"></div>
+                </div>
+
+                <div class="tab-content" id="tab-compare">
+                    <div class="compare-controls">
+                        <div class="compare-select-row">
+                            <div class="compare-col"><label>Profile A</label><select id="compare-a"></select></div>
+                            <div class="compare-vs">vs</div>
+                            <div class="compare-col"><label>Profile B</label><select id="compare-b"></select></div>
+                            <button class="btn btn-preview btn-compare-go" onclick="runComparison()">Compare</button>
+                        </div>
+                    </div>
+                    <div class="compare-results hidden" id="compare-results">
+                        <canvas id="chart-compare-bars" height="280"></canvas>
+                        <div class="compare-table" id="compare-table"></div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="tab-generation">
+                    <div class="empty-state" id="gen-empty-state"><div class="empty-icon">&#9889;</div><p>Click <strong>"Generate"</strong> to start.</p></div>
+                    <div class="gen-content hidden" id="gen-content">
+                        <div class="progress-wrapper"><div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div><div class="progress-text" id="progress-text">0%</div></div>
+                        <div class="gen-message" id="gen-message">Initializing...</div>
+                        <div class="gen-results hidden" id="gen-results"></div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Charts -->
+        <section class="panel viz-panel">
+            <div class="panel-header"><h2>Error Profile Visualization</h2></div>
+            <div class="viz-grid">
+                <canvas id="chart-error-dist" width="400" height="220"></canvas>
+                <canvas id="chart-position-bias" width="400" height="220"></canvas>
+                <canvas id="chart-homopolymer" width="400" height="220"></canvas>
+            </div>
+        </section>
+    </div>
+    <script src="/static/script.js"></script>
+</body>
+</html>
