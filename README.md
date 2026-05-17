@@ -18,6 +18,10 @@
 
 **SynthDNA Lab** is a production-ready pipeline for generating synthetic DNA sequence datasets that faithfully reproduce the physical, chemical, and biological error profiles of modern DNA synthesis platforms. Unlike simple random ACGT generation or uniform noise models, SynthDNA Lab implements a **3-layer error injection architecture** calibrated from empirical data published by leading research groups.
 
+
+<img width="1869" height="1064" alt="image" src="https://github.com/user-attachments/assets/3e2c0515-c4fc-43ee-857a-ab8728d40e61" />
+
+
 ### Why does this matter?
 
 Training machine learning models for **DNA trace reconstruction** (e.g., diffusion models, transformers) requires datasets that capture the true noise characteristics of the DNA data storage channel. SynthDNA Lab provides this by modeling:
@@ -25,9 +29,6 @@ Training machine learning models for **DNA trace reconstruction** (e.g., diffusi
 1. **Synthesis errors** — vendor-specific, position-dependent, homopolymer-biased
 2. **PCR amplification errors** — rare polymerase mistakes during copying
 3. **Sequencing errors** — technology-specific (Illumina, Nanopore, PacBio)
-
-
-<img width="1869" height="1064" alt="image" src="https://github.com/user-attachments/assets/3e2c0515-c4fc-43ee-857a-ab8728d40e61" />
 
 ---
 
