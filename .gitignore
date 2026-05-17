@@ -16,6 +16,12 @@ venv/
 env/
 .env/
 
+# Testing
+.pytest_cache/
+
+# Vercel
+.vercel/
+
 # IDE
 .vscode/
 .idea/
